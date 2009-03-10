@@ -8,7 +8,7 @@ Allows you to change this:
 	<script src='file1.js' type='text/javascript'></script>
 	<script src='file2.js' type='text/javascript'></script>
 	<script src='file3.js' type='text/javascript'></script>
-	
+
 To this:
 
 	<script src='combine.cfm?files=file1.js,file2.js,file3.js' type='text/javascript'></script>
@@ -21,17 +21,15 @@ How do I use it?
 - Place combine.cfm and Combine.cfc somewhere under your webserver
 - Modify the combine.cfm with your preferred combine options, and error handling if required.
 - Update your <script> and <link> urls for JS and CSS respectively, e.g:
-  - <script src="combine.cfm?type=js&files=monkey.js,jungle.js" type="text/javascript"></script>
-  - <link href="combine.cfm?type=css&files=monkey.css,jungle.css" type="text/css" rel="stylesheet" media="screen" />
+  - <script src="combine.cfm?files=monkey.js,jungle.js" type="text/javascript"></script>
+  - <link href="combine.cfm?files=monkey.css,jungle.css" type="text/css" rel="stylesheet" media="screen" />
 - [optional] If you want to use the CSS or Javascript compression, you need to add the required Java to your classpath. See "How to add the Java to your classpath" below...
 
 
 How to add the Java to your classpath [required for css and js compression]
 ---------------------------------------------------------------------------
 1. Determine where you will place your Java, it must go in a directory in your Coldfusion class path. This could either be cf_install_dir\lib, or a custom directory path which has been added to the Coldfusion class path (through Coldfusion's admin/config)
-2. Add the code to the class_path_dir as determined in step 1, using one of the following 2 methods:
-  a. copy combine.jar (archive) to your class_path_dir; or
-  b. copy the 'com' directory and contents to your class_path_dir (directory structure must not change).
+2. Copy yuicompressor-2.4.2.jar (archive) to your class_path_dir (as determined in step 1)
 3. Restart Coldfusion
 
 
@@ -44,22 +42,11 @@ Why?
 
 How does it work?
 -----------------
-- [optional] Uses the dependable JSMin method to reduce redundancy from the JavaScript, without obfuscation. In my experience, it's very dependable.
-- [optional] Uses the YUI CSS compressor to reduce redundancy from the CSS, not just white-space removal, see http://developer.yahoo.com/yui/compressor/
+- [optional] Uses the YUI JavaScript compressor to reduce redundancy from the JavaScript. (http://developer.yahoo.com/yui/compressor/)
+- [optional] Uses the YUI CSS compressor to reduce redundancy from the CSS, not just white-space removal. (http://developer.yahoo.com/yui/compressor/)
 - [optional] Caches merged files to local machine to avoid having to rebuild on each request
-- [optional] Uses Etags (file hash/fingerprints) to allow browsers to make conditional requests. E.g. browser says to server, only give me the javascript to download if your etag is different to mine (i.e. only if it has changed since my last visit). Otherwise, browser uses it's locally cached version.
+- [optional] Uses Etags (file hash/fingerprints) and last-modified headers to allow browsers to make conditional requests. E.g. browser says to server, only give me the javascript to download if your etag is different to mine (i.e. only if it has changed since my last visit). Otherwise, browser uses it's locally cached version.
 
-
-Real Stats - an example of the benefits of ETags
-------------------------------------------------
-Real statistics from one of our sites (obtained via Fusion Reactor). Note how many 304 status codes are returned. These mean that the request instantly ends, and the browser uses its local version. This happens when the browser's version is the same as the server version, and results in less load on your server!
-
-200 OK: 10346 (normal response, resturns content)
-304 Not Modified: 3038 (server load reduced!)
-500 Internal Server Error: 11 (my bugs?!) 
-301 Moved Permanently: 187 
-302 Found: 48 
-404 Not Found: 58 
 
 More
 ----
@@ -79,10 +66,20 @@ Credits
 -------
 All I have done here is pulled together some other peoples' clever work, into a workable solution for Coldfusion apps. So loads of credit to the following:
 
+- Combine.cfc
+  - I just added a few enhancements and changes to the orginal Combine.cfc by Joe Roberts available at http://combine.riaforge.org
 - Combine.php
   - A lot of ideas came from this project. Ed Eliot (www.ejeliot.com), Thanks!
-- JSMin:
-  - Originally written by Douglas Crockford www.crockford.com
-  - Ported to Java by John Reilly http://www.inconspicuous.org/projects/jsmin/JSMin.java
-- YUI CSS Compressor:
-  - Part of the impressive YUI Compressor library http://developer.yahoo.com/yui/compressor/
+- YUI Compressor:
+  - YUI Compressor library http://developer.yahoo.com/yui/compressor/
+
+
+Changes from original Combine.cfc
+---------------------------------
+- Added support for last-modified HTTP header because IE6 doesn't support the etag header.
+- Use YUI compressor instead of JSMin to compress JavaScript. The Java port of JSMin that was being used was outdated and didn't support IE conditional compilation comments.
+- Modified reinit URL parameter so that it also bypasses any client/server-side caches.
+- Added support for additional URL settings to enable/disable caching and compression per request.
+- Refactored code to use more generic method/setting names for caching and compression.
+- Fixed a few bugs preventing component from being cached in application scope.
+- Tightened security to prevent unauthorized access to non-JavaScript/CSS files.
